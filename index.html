@@ -1,0 +1,1938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Purawow — Sweetness. Reimagined.</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,900;1,400;1,600;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,200;0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+/* ============================
+   ROOT & RESET
+   ============================ */
+:root {
+  --E: #1FAF6E; --ED: #0d7a4a; --EL: #3DD68C; --EG: rgba(31,175,110,0.2);
+  --EG2: rgba(31,175,110,0.08);
+  --CR: #F8F7F2; --G: #E6C068; --GD: #c9a032; --GG: rgba(230,192,104,0.25);
+  --BG: #04080a; --BG2: #070f0b; --BG3: #0a1610;
+  --T1: rgba(248,247,242,0.95); --T2: rgba(248,247,242,0.65);
+  --T3: rgba(248,247,242,0.38); --T4: rgba(248,247,242,0.18);
+  --GL: rgba(248,247,242,0.04); --GLB: rgba(248,247,242,0.09);
+  --R1: 28px; --R2: 20px;
+  --shadow: 0 32px 80px rgba(0,0,0,0.6);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; overflow-x: hidden; font-size: 16px; }
+body {
+  background: var(--BG);
+  color: var(--CR);
+  font-family: 'DM Sans', sans-serif;
+  overflow-x: hidden;
+  cursor: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================
+   CURSOR
+   ============================ */
+#cursor {
+  position: fixed; pointer-events: none; z-index: 9999;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--E); transform: translate(-50%,-50%);
+  transition: width .3s, height .3s, background .3s, opacity .3s;
+  mix-blend-mode: screen; will-change: transform;
+}
+#cursorRing {
+  position: fixed; pointer-events: none; z-index: 9998;
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 1.5px solid rgba(31,175,110,0.5);
+  transform: translate(-50%,-50%);
+  transition: transform .15s ease-out, width .3s, height .3s, border-color .3s;
+  will-change: transform;
+}
+body:hover #cursor { opacity: 1; }
+
+/* ============================
+   GLOBAL CANVAS
+   ============================ */
+#masterCanvas {
+  position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 0; pointer-events: none;
+}
+
+/* ============================
+   NAVIGATION
+   ============================ */
+nav {
+  position: fixed; top: 0; inset-x: 0; z-index: 1000;
+  padding: 22px 60px;
+  display: flex; align-items: center; justify-content: space-between;
+  transition: all .5s cubic-bezier(.23,1,.32,1);
+}
+nav.scrolled {
+  background: rgba(4,8,10,0.88);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border-bottom: 1px solid rgba(31,175,110,0.12);
+  padding: 14px 60px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+}
+.navLogo {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.55rem; font-weight: 700;
+  background: linear-gradient(130deg, var(--CR) 0%, var(--G) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  letter-spacing: .04em; cursor: pointer; text-decoration: none;
+}
+.navLinks { display: flex; gap: 38px; list-style: none; }
+.navLinks a {
+  color: var(--T2); text-decoration: none;
+  font-size: .8rem; font-weight: 500;
+  letter-spacing: .1em; text-transform: uppercase;
+  transition: color .3s; cursor: pointer;
+  position: relative;
+}
+.navLinks a::after {
+  content: ''; position: absolute; bottom: -4px; left: 0;
+  width: 0; height: 1px; background: var(--E);
+  transition: width .3s;
+}
+.navLinks a:hover { color: var(--E); }
+.navLinks a:hover::after { width: 100%; }
+.navRight { display: flex; align-items: center; gap: 16px; }
+.cartTrigger {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 22px; border-radius: 100px;
+  background: var(--GL); border: 1px solid var(--GLB);
+  color: var(--T1); font-size: .78rem; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase;
+  cursor: pointer; transition: all .35s;
+}
+.cartTrigger:hover {
+  background: var(--E); border-color: var(--E);
+  box-shadow: 0 0 32px var(--EG);
+  transform: scale(1.03);
+}
+#cartBadge {
+  background: var(--E); color: #fff;
+  border-radius: 50%; width: 22px; height: 22px;
+  font-size: .68rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform .35s cubic-bezier(.34,1.56,.64,1);
+  min-width: 22px;
+}
+#cartBadge.pop { transform: scale(1.7); }
+
+/* ============================
+   SECTIONS
+   ============================ */
+section {
+  position: relative; z-index: 10;
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+}
+.secWrap { width: 100%; max-width: 1280px; padding: 0 60px; }
+.secEye {
+  font-size: .68rem; letter-spacing: .42em;
+  text-transform: uppercase; color: var(--E);
+  margin-bottom: 18px; font-weight: 500;
+  opacity: 0; transition: all .9s;
+}
+.secEye.v { opacity: 1; }
+.secH {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.6rem, 5.5vw, 6.2rem);
+  font-weight: 700; line-height: 1.06;
+  color: var(--CR); margin-bottom: 20px;
+}
+.secH em { color: var(--G); font-style: italic; }
+.secSub {
+  font-size: clamp(.95rem, 1.6vw, 1.15rem);
+  color: var(--T2); font-weight: 300;
+  line-height: 1.8; max-width: 640px;
+  margin-bottom: 56px;
+}
+.divLine {
+  height: 1px; width: 100%;
+  background: linear-gradient(to right, transparent, rgba(31,175,110,.18), transparent);
+}
+
+/* REVEAL */
+.rv {
+  opacity: 0; transform: translateY(42px);
+  transition: opacity .95s cubic-bezier(.16,1,.3,1),
+              transform .95s cubic-bezier(.16,1,.3,1);
+}
+.rv.v { opacity: 1; transform: translateY(0); }
+.d1 { transition-delay: .1s; }
+.d2 { transition-delay: .2s; }
+.d3 { transition-delay: .3s; }
+.d4 { transition-delay: .45s; }
+.d5 { transition-delay: .6s; }
+
+/* ============================
+   SECTION 1 — HERO
+   ============================ */
+#hero {
+  min-height: 100vh; text-align: center;
+  flex-direction: column; padding: 0 24px;
+}
+.heroEye {
+  font-size: .7rem; letter-spacing: .38em;
+  text-transform: uppercase; color: var(--E);
+  margin-bottom: 22px;
+  opacity: 0; transform: translateY(20px);
+  animation: fU .9s .7s forwards;
+}
+.heroH {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(3.4rem, 9vw, 9.5rem);
+  font-weight: 900; line-height: 1.0;
+  letter-spacing: -.02em;
+  background: linear-gradient(145deg, var(--CR) 0%, rgba(248,247,242,.7) 45%, var(--G) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  margin-bottom: 26px;
+  opacity: 0; transform: translateY(34px);
+  animation: fU 1.1s .9s forwards;
+}
+.heroSub {
+  font-size: clamp(1rem, 2vw, 1.3rem);
+  color: var(--T2); max-width: 580px;
+  margin: 0 auto 14px; font-weight: 300; line-height: 1.75;
+  opacity: 0; transform: translateY(22px);
+  animation: fU 1s 1.1s forwards;
+}
+.heroTag {
+  font-size: .9rem; color: var(--T3);
+  margin-bottom: 50px; letter-spacing: .04em;
+  opacity: 0; animation: fU 1s 1.3s forwards;
+}
+@keyframes fU { to { opacity: 1; transform: translateY(0); } }
+.heroCta {
+  padding: 17px 44px; border-radius: 100px;
+  background: linear-gradient(135deg, var(--E), var(--ED));
+  color: #fff; font-size: .88rem;
+  font-weight: 600; letter-spacing: .14em;
+  text-transform: uppercase; border: none; cursor: pointer;
+  box-shadow: 0 0 50px var(--EG), 0 12px 36px rgba(0,0,0,.45);
+  transition: all .45s cubic-bezier(.23,1,.32,1);
+  position: relative; overflow: hidden;
+  opacity: 0; animation: fU 1s 1.5s forwards;
+}
+.heroCta:hover {
+  transform: scale(1.06) translateY(-3px);
+  box-shadow: 0 0 80px var(--EG), 0 20px 54px rgba(0,0,0,.5);
+}
+.heroCta::after {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at center, rgba(255,255,255,.2), transparent 70%);
+  opacity: 0; transition: opacity .3s;
+}
+.heroCta:hover::after { opacity: 1; }
+.scrollCue {
+  position: absolute; bottom: 44px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  opacity: .4; animation: scueBob 2.2s ease-in-out infinite;
+}
+.scrollCue span { font-size: .65rem; letter-spacing: .28em; text-transform: uppercase; }
+.scrollCueLine { width: 1px; height: 52px; background: linear-gradient(to bottom, var(--E), transparent); }
+@keyframes scueBob {
+  0%,100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-10px); }
+}
+
+/* ============================
+   SECTION 2 — PROBLEM
+   ============================ */
+#problem { padding: 120px 0; min-height: auto; }
+.problemGrid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 28px; margin-top: 60px;
+}
+.pCard {
+  background: var(--GL); border: 1px solid var(--GLB);
+  border-radius: var(--R1); padding: 36px;
+  transition: all .45s cubic-bezier(.23,1,.32,1);
+  position: relative; overflow: hidden;
+}
+.pCard::before {
+  content: ''; position: absolute;
+  inset: 0; opacity: 0; transition: opacity .4s;
+  background: radial-gradient(circle at 50% 0%, rgba(230,80,80,.06), transparent 65%);
+}
+.pCard:hover { transform: translateY(-6px); border-color: rgba(230,80,80,.2); }
+.pCard:hover::before { opacity: 1; }
+.pCardIcon {
+  width: 48px; height: 48px; border-radius: 14px;
+  background: rgba(230,192,104,.12);
+  border: 1px solid rgba(230,192,104,.22);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.45rem; margin-bottom: 18px;
+}
+.pCardH { font-family: 'Playfair Display', serif; font-size: 1.15rem; color: var(--CR); margin-bottom: 10px; font-weight: 600; }
+.pCardT { font-size: .84rem; color: var(--T2); line-height: 1.65; }
+.problemClose {
+  margin-top: 72px; text-align: center;
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.6rem, 3.5vw, 2.6rem);
+  color: var(--G); font-style: italic; line-height: 1.4;
+}
+
+/* ============================
+   SECTION 3 — SOLUTION
+   ============================ */
+#solution { padding: 120px 0; min-height: auto; }
+.solGrid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 100px; align-items: center;
+}
+.solVisual {
+  position: relative; height: 520px;
+  display: flex; align-items: center; justify-content: center;
+}
+.solGlowOrb {
+  position: absolute; width: 320px; height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(31,175,110,.22), transparent 70%);
+  animation: orbPulse 3.5s ease-in-out infinite;
+}
+@keyframes orbPulse { 0%,100%{transform:scale(1);opacity:.6} 50%{transform:scale(1.18);opacity:1} }
+.leafOrbit {
+  position: absolute; font-size: clamp(1.5rem, 3vw, 3.5rem);
+  animation: leafOrb 4s ease-in-out infinite;
+  filter: drop-shadow(0 0 18px rgba(31,175,110,.6));
+}
+.leafOrbit:nth-child(2) { top: 12%; left: 8%; animation-delay: -1s; font-size: 2rem; }
+.leafOrbit:nth-child(3) { bottom: 18%; right: 12%; animation-delay: -2.2s; font-size: 2.8rem; }
+.leafOrbit:nth-child(4) { top: 58%; left: 15%; animation-delay: -.7s; font-size: 1.6rem; }
+.leafOrbit:nth-child(5) { top: 22%; right: 8%; animation-delay: -1.8s; font-size: 1.4rem; }
+@keyframes leafOrb {
+  0%,100%{transform:translateY(0) rotate(0deg) scale(1)}
+  33%{transform:translateY(-22px) rotate(8deg) scale(1.05)}
+  66%{transform:translateY(12px) rotate(-5deg) scale(.95)}
+}
+.solCenter {
+  position: absolute; text-align: center;
+  background: rgba(31,175,110,.08);
+  border: 1px solid rgba(31,175,110,.22);
+  border-radius: 50%; width: 160px; height: 160px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  backdrop-filter: blur(12px);
+}
+.solCenter .big { font-size: 3.2rem; }
+.solCenter small { font-size: .6rem; letter-spacing: .22em; text-transform: uppercase; color: var(--E); margin-top: 8px; }
+.benList { list-style: none; display: flex; flex-direction: column; gap: 14px; margin-top: 36px; }
+.benItem {
+  display: flex; align-items: center; gap: 16px;
+  padding: 14px 20px; border-radius: 14px;
+  background: var(--EG2); border: 1px solid var(--EG);
+  transition: all .35s;
+}
+.benItem:hover { background: rgba(31,175,110,.12); border-color: rgba(31,175,110,.32); transform: translateX(4px); }
+.benDot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--E); flex-shrink: 0;
+  box-shadow: 0 0 10px var(--EG);
+}
+.benItem span { font-size: .88rem; color: var(--T2); }
+
+/* ============================
+   SECTION 4 — PRODUCTS
+   ============================ */
+#products { padding: 140px 0; min-height: auto; }
+.productsHeader { text-align: center; margin-bottom: 80px; }
+.productsHeader .secSub { margin: 0 auto 0; text-align: center; }
+.prodGrid {
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: 28px;
+}
+.prodCard {
+  background: var(--GL); border: 1px solid var(--GLB);
+  border-radius: var(--R1); padding: 44px;
+  position: relative; overflow: hidden;
+  transition: all .55s cubic-bezier(.23,1,.32,1);
+  cursor: default;
+}
+.prodCard::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 50% -10%, rgba(31,175,110,.1), transparent 60%);
+  opacity: 0; transition: opacity .45s;
+}
+.prodCard:hover {
+  transform: translateY(-10px) rotateY(2deg) scale(1.01);
+  border-color: rgba(31,175,110,.3);
+  box-shadow: 0 40px 80px rgba(0,0,0,.55), 0 0 50px rgba(31,175,110,.1);
+}
+.prodCard:hover::before { opacity: 1; }
+.prodBadge {
+  position: absolute; top: 22px; right: 22px;
+  padding: 5px 14px; border-radius: 100px;
+  background: rgba(230,192,104,.14);
+  border: 1px solid rgba(230,192,104,.3);
+  font-size: .65rem; font-weight: 600;
+  letter-spacing: .14em; text-transform: uppercase;
+  color: var(--G);
+}
+.prodEmoji {
+  font-size: 3.8rem; display: block; margin-bottom: 24px;
+  filter: drop-shadow(0 0 24px var(--EG));
+  transition: transform .45s cubic-bezier(.23,1,.32,1);
+}
+.prodCard:hover .prodEmoji { transform: scale(1.14) rotate(6deg); }
+.prodName {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.65rem; font-weight: 700;
+  color: var(--CR); margin-bottom: 6px;
+}
+.prodTagline { font-size: .88rem; color: var(--T2); font-style: italic; margin-bottom: 18px; line-height: 1.6; }
+.prodDesc { font-size: .82rem; color: var(--T3); line-height: 1.72; margin-bottom: 22px; }
+.prodBens {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-bottom: 28px;
+}
+.prodBen {
+  padding: 5px 13px; border-radius: 100px;
+  background: rgba(31,175,110,.1);
+  border: 1px solid rgba(31,175,110,.2);
+  font-size: .72rem; color: var(--E); font-weight: 500;
+}
+.prodPriceRow {
+  display: flex; align-items: baseline; gap: 12px;
+  margin-bottom: 28px;
+}
+.prodPrice {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.1rem; font-weight: 700; color: var(--CR);
+}
+.prodStrike {
+  font-size: .95rem; color: var(--T3);
+  text-decoration: line-through;
+}
+.prodSave {
+  font-size: .72rem; color: var(--E); font-weight: 600;
+  background: rgba(31,175,110,.12); padding: 4px 11px; border-radius: 100px;
+}
+.prodBtns { display: flex; gap: 12px; }
+.btnAdd {
+  flex: 1; padding: 14px; border-radius: 100px;
+  background: linear-gradient(135deg, var(--E), var(--ED));
+  color: #fff; font-size: .78rem; font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase;
+  border: none; cursor: pointer;
+  box-shadow: 0 0 28px var(--EG);
+  transition: all .38s cubic-bezier(.23,1,.32,1);
+  position: relative; overflow: hidden;
+}
+.btnAdd:hover {
+  transform: scale(1.04);
+  box-shadow: 0 0 48px var(--EG), 0 8px 24px rgba(0,0,0,.3);
+}
+.btnAdd:active { transform: scale(.97); }
+.btnDetail {
+  padding: 14px 22px; border-radius: 100px;
+  background: transparent; border: 1px solid var(--GLB);
+  color: var(--T2); font-size: .78rem; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase;
+  cursor: pointer; transition: all .3s;
+}
+.btnDetail:hover { border-color: var(--E); color: var(--E); }
+
+/* ============================
+   SECTION 5 — BENEFITS
+   ============================ */
+#benefits { padding: 120px 0; min-height: auto; }
+.benGrid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 22px; margin-top: 64px;
+}
+.benSphere {
+  padding: 42px 26px; border-radius: var(--R1);
+  background: var(--GL); border: 1px solid var(--GLB);
+  text-align: center; transition: all .45s;
+  position: relative; overflow: hidden;
+}
+.benSphere::after {
+  content: ''; position: absolute; bottom: 0; inset-x: 0;
+  height: 2px; background: linear-gradient(90deg, transparent, var(--E), transparent);
+  opacity: 0; transition: opacity .4s;
+}
+.benSphere:hover {
+  transform: translateY(-10px);
+  border-color: rgba(31,175,110,.28);
+  background: rgba(31,175,110,.05);
+  box-shadow: 0 24px 60px rgba(0,0,0,.4);
+}
+.benSphere:hover::after { opacity: 1; }
+.bsIcon {
+  font-size: 2.6rem; margin-bottom: 20px; display: block;
+  filter: drop-shadow(0 0 16px rgba(31,175,110,.5));
+}
+.bsTitle {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.05rem; color: var(--CR);
+  margin-bottom: 12px; font-weight: 600;
+}
+.bsText { font-size: .8rem; color: var(--T2); line-height: 1.68; }
+
+/* ============================
+   SECTION 6 — HOW IT WORKS
+   ============================ */
+#how { padding: 120px 0; min-height: auto; }
+.timeline {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 0; position: relative; margin-top: 64px;
+}
+.timeline::before {
+  content: ''; position: absolute;
+  top: 56px; left: 12%; right: 12%; height: 1px;
+  background: linear-gradient(to right, transparent, var(--E), var(--G), var(--E), transparent);
+}
+.tlStep { text-align: center; padding: 0 18px; }
+.tlStep:hover .tlCircle {
+  background: rgba(31,175,110,.2);
+  box-shadow: 0 0 48px rgba(31,175,110,.35);
+  transform: scale(1.08);
+}
+.tlCircle {
+  width: 112px; height: 112px; border-radius: 50%;
+  background: rgba(31,175,110,.07);
+  border: 1px solid rgba(31,175,110,.3);
+  margin: 0 auto 24px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.5rem; transition: all .4s;
+}
+.tlNum { font-size: .62rem; letter-spacing: .32em; text-transform: uppercase; color: var(--E); margin-bottom: 8px; }
+.tlTitle { font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--CR); margin-bottom: 8px; font-weight: 600; }
+.tlText { font-size: .78rem; color: var(--T2); line-height: 1.62; }
+.howClose {
+  text-align: center; margin-top: 72px;
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.4rem, 2.5vw, 2rem);
+  color: var(--T2); font-style: italic;
+}
+.howClose em { color: var(--G); font-style: italic; }
+
+/* ============================
+   SECTION 7 — RECIPES
+   ============================ */
+#recipes { padding: 120px 0; min-height: auto; }
+.recGrid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 22px; margin-top: 64px;
+}
+.recCard {
+  padding: 38px 22px; border-radius: var(--R1);
+  background: var(--GL); border: 1px solid var(--GLB);
+  text-align: center; cursor: pointer;
+  transition: all .5s cubic-bezier(.23,1,.32,1);
+  position: relative; overflow: hidden;
+}
+.recCard::before {
+  content: ''; position: absolute;
+  inset: 0; background: radial-gradient(circle at 50% 50%, rgba(230,192,104,.08), transparent);
+  opacity: 0; transition: opacity .4s;
+}
+.recCard:hover {
+  transform: translateY(-12px) rotate(1.8deg) scale(1.04);
+  border-color: rgba(230,192,104,.3);
+  background: rgba(230,192,104,.05);
+  box-shadow: 0 28px 56px rgba(0,0,0,.45);
+}
+.recCard:hover::before { opacity: 1; }
+.recEmoji { font-size: 3.2rem; margin-bottom: 16px; display: block; }
+.recName {
+  font-family: 'Playfair Display', serif;
+  font-size: .98rem; color: var(--CR); margin-bottom: 9px; font-weight: 600;
+}
+.recTag { font-size: .7rem; color: var(--G); letter-spacing: .14em; text-transform: uppercase; }
+
+/* ============================
+   SECTION 8 — STORY
+   ============================ */
+#story { padding: 120px 0; min-height: auto; }
+.storyInner { max-width: 820px; text-align: center; margin: 0 auto; }
+.storyH {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.6rem, 5.5vw, 5.5rem);
+  font-weight: 700; line-height: 1.1;
+  background: linear-gradient(145deg, var(--CR), var(--G));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  margin-bottom: 44px;
+}
+.storyPara {
+  font-size: 1.1rem; color: var(--T2); line-height: 1.92;
+  margin-bottom: 22px; font-weight: 300;
+}
+.storyPara em { color: var(--E); font-style: normal; font-weight: 500; }
+.storyDivide {
+  width: 56px; height: 1px; margin: 40px auto;
+  background: linear-gradient(to right, transparent, var(--E), transparent);
+}
+
+/* ============================
+   FINAL CTA
+   ============================ */
+#finalCta {
+  padding: 120px 24px; text-align: center;
+  flex-direction: column; min-height: 70vh;
+}
+.ctaH {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(3.2rem, 7vw, 7rem);
+  font-weight: 900; line-height: 1.02;
+  background: linear-gradient(145deg, var(--CR), var(--G));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  margin-bottom: 22px;
+}
+.ctaSub { font-size: 1.1rem; color: var(--T2); margin-bottom: 52px; font-weight: 300; }
+.btnFinal {
+  padding: 20px 60px; border-radius: 100px;
+  background: linear-gradient(135deg, var(--E), var(--ED));
+  color: #fff; font-size: .95rem; font-weight: 600;
+  letter-spacing: .15em; text-transform: uppercase;
+  border: none; cursor: pointer;
+  box-shadow: 0 0 70px var(--EG), 0 20px 50px rgba(0,0,0,.45);
+  transition: all .45s cubic-bezier(.23,1,.32,1);
+}
+.btnFinal:hover {
+  transform: scale(1.07) translateY(-4px);
+  box-shadow: 0 0 120px var(--EG), 0 28px 70px rgba(0,0,0,.55);
+}
+
+/* ============================
+   FOOTER + CONTACT
+   ============================ */
+footer {
+  background: var(--BG2);
+  border-top: 1px solid rgba(31,175,110,.1);
+  padding: 80px 60px 48px;
+  position: relative; z-index: 10;
+}
+.footerGrid {
+  display: grid; grid-template-columns: 2fr 1fr 1fr 1.5fr;
+  gap: 56px; margin-bottom: 56px;
+}
+.ftBrand {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem; font-weight: 700;
+  background: linear-gradient(130deg, var(--CR), var(--G));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  margin-bottom: 10px;
+}
+.ftSlogan { font-size: .74rem; letter-spacing: .2em; text-transform: uppercase; color: var(--T3); margin-bottom: 20px; }
+.ftDesc { font-size: .82rem; color: var(--T3); line-height: 1.72; }
+.ftColH { font-size: .68rem; letter-spacing: .28em; text-transform: uppercase; color: var(--T3); margin-bottom: 20px; font-weight: 600; }
+.ftLinks { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.ftLinks a { color: rgba(248,247,242,.45); text-decoration: none; font-size: .85rem; transition: color .3s; cursor: pointer; }
+.ftLinks a:hover { color: var(--E); }
+
+/* Contact Form in footer */
+.contactForm { display: flex; flex-direction: column; gap: 0; }
+.fGroup { margin-bottom: 14px; }
+.fLabel { font-size: .7rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--T2); display: block; margin-bottom: 7px; }
+.fInput, .fTextarea {
+  width: 100%; background: rgba(248,247,242,.04);
+  border: 1px solid rgba(248,247,242,.1);
+  border-radius: 12px; padding: 13px 16px;
+  color: var(--CR); font-family: 'DM Sans', sans-serif;
+  font-size: .88rem; outline: none; transition: all .3s;
+}
+.fInput:focus, .fTextarea:focus {
+  border-color: var(--E);
+  background: rgba(31,175,110,.06);
+  box-shadow: 0 0 0 3px rgba(31,175,110,.14);
+}
+.fInput::placeholder, .fTextarea::placeholder { color: var(--T3); }
+.fTextarea { resize: vertical; min-height: 100px; }
+.btnContact {
+  width: 100%; padding: 14px; border-radius: 100px;
+  background: linear-gradient(135deg, var(--E), var(--ED));
+  color: #fff; font-size: .78rem; font-weight: 600;
+  letter-spacing: .14em; text-transform: uppercase;
+  border: none; cursor: pointer; transition: all .38s;
+  box-shadow: 0 0 28px var(--EG);
+  margin-top: 6px;
+}
+.btnContact:hover { transform: translateY(-2px); box-shadow: 0 0 48px var(--EG); }
+.contactSuccess {
+  display: none; margin-top: 14px;
+  padding: 14px 18px; border-radius: 12px;
+  background: rgba(31,175,110,.1);
+  border: 1px solid rgba(31,175,110,.22);
+  color: var(--E); font-size: .85rem; font-weight: 500;
+  text-align: center;
+}
+.footerBottom {
+  border-top: 1px solid rgba(248,247,242,.06);
+  padding-top: 32px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.ftCopy { font-size: .76rem; color: var(--T3); }
+.socialRow { display: flex; gap: 14px; }
+.socialBtn {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--GL); border: 1px solid var(--GLB);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .9rem; color: var(--T2); cursor: pointer;
+  transition: all .3s; text-decoration: none;
+}
+.socialBtn:hover { background: var(--E); border-color: var(--E); color: #fff; transform: translateY(-2px); }
+
+/* ============================
+   PANELS — CART
+   ============================ */
+.overlay {
+  position: fixed; inset: 0; z-index: 1900;
+  background: rgba(4,8,10,.8); backdrop-filter: blur(14px);
+  opacity: 0; pointer-events: none; transition: opacity .4s;
+}
+.overlay.open { opacity: 1; pointer-events: all; }
+
+.cartPanel {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 2000;
+  width: min(500px, 95vw);
+  background: #09120e;
+  border-left: 1px solid rgba(31,175,110,.15);
+  display: flex; flex-direction: column;
+  transform: translateX(100%);
+  transition: transform .5s cubic-bezier(.23,1,.32,1);
+  box-shadow: -20px 0 80px rgba(0,0,0,.7);
+}
+.cartPanel.open { transform: translateX(0); }
+.panelHead {
+  padding: 28px 32px;
+  border-bottom: 1px solid rgba(248,247,242,.07);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.panelTitle {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem; font-weight: 700; color: var(--CR);
+}
+.panelClose {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--GL); border: 1px solid var(--GLB);
+  color: var(--T2); cursor: pointer; font-size: 1.1rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .3s;
+}
+.panelClose:hover { background: rgba(255,80,80,.15); color: #ff6b6b; border-color: rgba(255,80,80,.3); }
+.cartBody { flex: 1; overflow-y: auto; padding: 24px 32px; }
+.cartBody::-webkit-scrollbar { width: 5px; }
+.cartBody::-webkit-scrollbar-thumb { background: var(--E); border-radius: 3px; }
+.emptyState {
+  text-align: center; padding: 64px 0; color: var(--T2);
+}
+.emptyState .emptyIcon { font-size: 3.5rem; display: block; margin-bottom: 18px; }
+.emptyState p { font-size: 1rem; margin-bottom: 28px; }
+.cartItem {
+  display: flex; align-items: flex-start; gap: 16px;
+  padding: 20px 0; border-bottom: 1px solid rgba(248,247,242,.07);
+}
+.ciIcon {
+  width: 56px; height: 56px; border-radius: 14px;
+  background: var(--GL); border: 1px solid var(--GLB);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.9rem; flex-shrink: 0;
+}
+.ciMeta { flex: 1; }
+.ciName { font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--CR); margin-bottom: 4px; font-weight: 600; }
+.ciPrice { font-size: .85rem; color: var(--E); font-weight: 600; }
+.ciQtyRow { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+.qBtn {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--GL); border: 1px solid var(--GLB);
+  color: var(--CR); cursor: pointer; font-size: 1.1rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .25s;
+}
+.qBtn:hover { background: var(--E); border-color: var(--E); }
+.qNum { font-size: .9rem; font-weight: 600; min-width: 26px; text-align: center; }
+.ciSub { font-size: .82rem; color: var(--T2); margin-left: 4px; }
+.ciRemove { background: none; border: none; color: var(--T3); cursor: pointer; font-size: 1.15rem; padding: 4px; margin-left: 4px; transition: color .25s; }
+.ciRemove:hover { color: #ff6b6b; }
+.cartFooter {
+  padding: 24px 32px;
+  border-top: 1px solid rgba(31,175,110,.18);
+  flex-shrink: 0;
+}
+.cartTotalRow {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 20px;
+}
+.ctLabel { font-size: .78rem; color: var(--T2); letter-spacing: .12em; text-transform: uppercase; }
+.ctAmt { font-family: 'Playfair Display', serif; font-size: 2rem; color: var(--CR); font-weight: 700; }
+.cartActions { display: flex; gap: 12px; }
+.btnContinue {
+  flex: 1; padding: 14px; border-radius: 100px;
+  background: transparent; border: 1px solid var(--GLB);
+  color: var(--T2); font-size: .76rem; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase;
+  cursor: pointer; transition: all .3s;
+}
+.btnContinue:hover { border-color: var(--E); color: var(--E); }
+.btnCheckout {
+  flex: 2; padding: 14px; border-radius: 100px;
+  background: linear-gradient(135deg, var(--E), var(--ED));
+  color: #fff; font-size: .78rem; font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase;
+  border: none; cursor: pointer; transition: all .38s;
+  box-shadow: 0 0 28px var(--EG);
+}
+.btnCheckout:hover { transform: scale(1.03); box-shadow: 0 0 48px var(--EG); }
+
+/* ============================
+   PANELS — CHECKOUT
+   ============================ */
+.checkoutPanel {
+  position: fixed; inset: 0; z-index: 2100;
+  overflow-y: auto; display: flex; align-items: flex-start;
+  justify-content: center; padding: 60px 24px;
+  background: rgba(4,8,10,.95); backdrop-filter: blur(20px);
+  opacity: 0; pointer-events: none;
+  transition: opacity .5s;
+}
+.checkoutPanel.open { opacity: 1; pointer-events: all; }
+.checkoutBox {
+  width: 100%; max-width: 1000px;
+  background: #09120e;
+  border: 1px solid rgba(31,175,110,.18);
+  border-radius: var(--R1); overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.checkoutTop {
+  padding: 36px 48px;
+  border-bottom: 1px solid rgba(248,247,242,.07);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.checkoutTop h2 { font-family: 'Playfair Display', serif; font-size: 1.8rem; color: var(--CR); font-weight: 700; }
+.checkoutBody { display: grid; grid-template-columns: 1.3fr 1fr; gap: 0; }
+.checkoutLeft, .checkoutRight { padding: 40px 48px; }
+.checkoutRight { border-left: 1px solid rgba(248,247,242,.07); }
+.coSectionH { font-size: .72rem; letter-spacing: .28em; text-transform: uppercase; color: var(--T2); margin-bottom: 22px; font-weight: 600; }
+.coRow { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 0; }
+.coFull { margin-bottom: 14px; }
+.orderSummaryCard { background: var(--GL); border: 1px solid var(--GLB); border-radius: 18px; padding: 24px; margin-bottom: 22px; }
+.osSummaryItem {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0; border-bottom: 1px solid rgba(248,247,242,.05);
+  font-size: .88rem; color: var(--T2);
+}
+.osSummaryItem:last-child { border-bottom: none; }
+.osSummaryItem.total { color: var(--CR); font-weight: 700; font-size: .95rem; padding-top: 14px; }
+
+/* Payment section */
+.paySection { background: rgba(31,175,110,.06); border: 1px solid rgba(31,175,110,.14); border-radius: 18px; padding: 24px; margin-bottom: 22px; }
+.payModes { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+.payMode {
+  flex: 1; min-width: 90px; padding: 12px 14px; border-radius: 12px;
+  background: var(--GL); border: 1px solid var(--GLB);
+  color: var(--T2); font-size: .76rem; font-weight: 600;
+  text-align: center; cursor: pointer; transition: all .3s;
+  letter-spacing: .06em;
+}
+.payMode.active { background: rgba(31,175,110,.14); border-color: rgba(31,175,110,.3); color: var(--E); }
+.stripeWidget {
+  background: rgba(4,8,10,.6); border: 1px solid rgba(248,247,242,.08);
+  border-radius: 12px; padding: 16px 18px;
+  display: flex; align-items: center; gap: 12px;
+  font-size: .85rem; color: var(--T2); margin-bottom: 12px;
+}
+.cardFieldRow { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 12px; }
+.secNote { font-size: .72rem; color: var(--T3); display: flex; align-items: center; gap: 6px; }
+.btnPay {
+  width: 100%; padding: 17px; border-radius: 100px;
+  background: linear-gradient(135deg, var(--E), var(--ED));
+  color: #fff; font-size: .88rem; font-weight: 600;
+  letter-spacing: .14em; text-transform: uppercase;
+  border: none; cursor: pointer; transition: all .4s;
+  box-shadow: 0 0 36px var(--EG);
+}
+.btnPay:hover { transform: translateY(-2px); box-shadow: 0 0 60px var(--EG); }
+
+/* ============================
+   CONFIRM PANEL
+   ============================ */
+.confirmPanel {
+  position: fixed; inset: 0; z-index: 3000;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(4,8,10,.95); backdrop-filter: blur(24px);
+  opacity: 0; pointer-events: none; transition: opacity .5s;
+}
+.confirmPanel.open { opacity: 1; pointer-events: all; }
+.confirmBox {
+  background: #09120e; border: 1px solid rgba(31,175,110,.22);
+  border-radius: var(--R1); padding: 60px; max-width: 560px;
+  width: 90vw; text-align: center;
+  box-shadow: var(--shadow), 0 0 80px rgba(31,175,110,.15);
+}
+.confCheck { font-size: 5rem; display: block; margin-bottom: 22px; animation: confPop .6s .1s both; }
+@keyframes confPop { from{transform:scale(0) rotate(-20deg)} 70%{transform:scale(1.2) rotate(5deg)} to{transform:scale(1) rotate(0)} }
+.confH { font-family: 'Playfair Display', serif; font-size: 2.1rem; color: var(--CR); margin-bottom: 14px; font-weight: 700; }
+.confSub { font-size: 1rem; color: var(--T2); margin-bottom: 10px; line-height: 1.7; }
+.confOrderId { font-size: .88rem; color: var(--E); font-weight: 600; margin-bottom: 36px; letter-spacing: .06em; }
+.confSummary { background: var(--GL); border: 1px solid var(--GLB); border-radius: 16px; padding: 20px; text-align: left; margin-bottom: 30px; }
+.confSumItem { display: flex; justify-content: space-between; padding: 8px 0; font-size: .88rem; color: var(--T2); border-bottom: 1px solid rgba(248,247,242,.05); }
+.confSumItem:last-child { border-bottom: none; color: var(--CR); font-weight: 600; padding-top: 14px; }
+
+/* ============================
+   DETAIL PANEL
+   ============================ */
+.detailPanel {
+  position: fixed; inset: 0; z-index: 2200;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px; background: rgba(4,8,10,.9); backdrop-filter: blur(18px);
+  opacity: 0; pointer-events: none; transition: opacity .4s;
+}
+.detailPanel.open { opacity: 1; pointer-events: all; }
+.detailBox {
+  background: #09120e; border: 1px solid rgba(31,175,110,.18);
+  border-radius: var(--R1); padding: 52px;
+  max-width: 540px; width: 100%;
+  box-shadow: var(--shadow);
+}
+
+/* TOAST */
+.toast {
+  position: fixed; bottom: 36px; right: 36px; z-index: 9900;
+  background: #0c1a10; border: 1px solid rgba(31,175,110,.3);
+  border-radius: 18px; padding: 18px 26px;
+  display: flex; align-items: center; gap: 16px;
+  min-width: 290px; max-width: 400px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.55), 0 0 40px rgba(31,175,110,.12);
+  transform: translateY(80px); opacity: 0;
+  transition: all .45s cubic-bezier(.23,1,.32,1);
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toastIcon { font-size: 1.6rem; }
+.toastMain { font-size: .9rem; color: var(--CR); font-weight: 500; }
+.toastSub { font-size: .76rem; color: var(--T2); margin-top: 2px; }
+
+/* ============================
+   RESPONSIVE
+   ============================ */
+@media(max-width: 1024px) {
+  nav { padding: 18px 32px; }
+  nav.scrolled { padding: 12px 32px; }
+  .secWrap { padding: 0 32px; }
+  footer { padding: 64px 32px 40px; }
+  .prodGrid,.benGrid,.recGrid { grid-template-columns: 1fr 1fr; }
+  .timeline { grid-template-columns: repeat(2, 1fr); }
+  .timeline::before { display: none; }
+  .footerGrid { grid-template-columns: 1fr 1fr; }
+  .checkoutBody { grid-template-columns: 1fr; }
+  .checkoutRight { border-left: none; border-top: 1px solid rgba(248,247,242,.07); }
+}
+@media(max-width: 768px) {
+  nav { padding: 14px 20px; }
+  nav.scrolled { padding: 10px 20px; }
+  .navLinks { display: none; }
+  .secWrap { padding: 0 20px; }
+  .heroH { font-size: clamp(2.6rem, 10vw, 4.2rem); }
+  .prodGrid,.benGrid,.recGrid,.timeline,.footerGrid,.checkoutBody,.solGrid,.problemGrid { grid-template-columns: 1fr; }
+  .solVisual { height: 260px; }
+  footer { padding: 48px 20px 32px; }
+  .checkoutLeft, .checkoutRight, .checkoutTop { padding: 24px; }
+  .cartPanel { width: 100vw; }
+  .confirmBox { padding: 36px 24px; }
+  .detailBox { padding: 32px 24px; }
+  .footerBottom { flex-direction: column; gap: 18px; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<!-- CURSOR -->
+<div id="cursor"></div>
+<div id="cursorRing"></div>
+
+<!-- MASTER CANVAS -->
+<canvas id="masterCanvas"></canvas>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <div class="toastIcon" id="toastIcon">🛍</div>
+  <div><div class="toastMain" id="toastMain">Added to cart!</div><div class="toastSub" id="toastSub">Item added successfully</div></div>
+</div>
+
+<!-- OVERLAYS -->
+<div class="overlay" id="overlay" onclick="closeAll()"></div>
+
+<!-- CART PANEL -->
+<div class="cartPanel" id="cartPanel">
+  <div class="panelHead">
+    <div class="panelTitle">Your Cart</div>
+    <button class="panelClose" onclick="closeCart()">✕</button>
+  </div>
+  <div class="cartBody" id="cartBody"></div>
+  <div class="cartFooter" id="cartFooter"></div>
+</div>
+
+<!-- CHECKOUT PANEL -->
+<div class="checkoutPanel" id="checkoutPanel">
+  <div class="checkoutBox">
+    <div class="checkoutTop">
+      <h2>Complete Your Order</h2>
+      <button class="panelClose" onclick="closeCheckout()">✕</button>
+    </div>
+    <div class="checkoutBody">
+      <div class="checkoutLeft">
+        <div class="coSectionH">Delivery Information</div>
+        <div class="coRow" style="margin-bottom:14px">
+          <div class="fGroup"><label class="fLabel">Full Name</label><input class="fInput" id="coName" placeholder="Your full name"></div>
+          <div class="fGroup"><label class="fLabel">Phone</label><input class="fInput" id="coPhone" placeholder="+91 XXXXX XXXXX"></div>
+        </div>
+        <div class="coFull"><label class="fLabel">Email</label><input class="fInput" id="coEmail" placeholder="you@email.com"></div>
+        <div class="coFull"><label class="fLabel">Delivery Address</label><input class="fInput" id="coAddr" placeholder="Street, area, landmark"></div>
+        <div class="coRow" style="margin-bottom:14px">
+          <div class="fGroup"><label class="fLabel">City</label><input class="fInput" id="coCity" placeholder="Mumbai"></div>
+          <div class="fGroup"><label class="fLabel">Pincode</label><input class="fInput" id="coPincode" placeholder="400001"></div>
+        </div>
+        <div style="margin-top:24px">
+          <div class="coSectionH">Payment</div>
+          <div class="paySection">
+            <div class="payModes">
+              <div class="payMode active" id="pm-card" onclick="selectPay('card')">💳 Card</div>
+              <div class="payMode" id="pm-upi" onclick="selectPay('upi')">📱 UPI</div>
+              <div class="payMode" id="pm-razorpay" onclick="selectPay('razorpay')">🟠 Razorpay</div>
+              <div class="payMode" id="pm-cod" onclick="selectPay('cod')">💵 COD</div>
+            </div>
+            <div class="stripeWidget">
+              <span>🔒</span><span>Secured by Stripe — 256-bit SSL encrypted</span>
+            </div>
+            <div class="cardFieldRow">
+              <div style="grid-column:1/-1"><div class="fGroup"><label class="fLabel">Card Number</label><input class="fInput" placeholder="4242 4242 4242 4242" value="4242 4242 4242 4242"></div></div>
+              <div class="fGroup"><label class="fLabel">Expiry</label><input class="fInput" placeholder="MM/YY" value="12/27"></div>
+              <div class="fGroup"><label class="fLabel">CVV</label><input class="fInput" placeholder="•••" value="•••"></div>
+            </div>
+            <div class="secNote" style="margin-top:12px">🔐 <span style="font-size:.72rem;color:var(--T3)">Stripe integration ready — connect STRIPE_SECRET_KEY in server.js</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="checkoutRight">
+        <div class="coSectionH">Order Summary</div>
+        <div class="orderSummaryCard" id="checkoutSummary"></div>
+        <button class="btnPay" onclick="placeOrder()">Pay Now — Place Order</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM PANEL -->
+<div class="confirmPanel" id="confirmPanel">
+  <div class="confirmBox" id="confirmBox"></div>
+</div>
+
+<!-- DETAIL PANEL -->
+<div class="detailPanel" id="detailPanel">
+  <div class="detailBox" id="detailBox"></div>
+</div>
+
+<!-- NAV -->
+<nav id="navbar">
+  <a class="navLogo" onclick="scrollTo(0,0)">Purawow</a>
+  <ul class="navLinks">
+    <li><a onclick="gotoSec('products')">Products</a></li>
+    <li><a onclick="gotoSec('benefits')">Benefits</a></li>
+    <li><a onclick="gotoSec('recipes')">Recipes</a></li>
+    <li><a onclick="gotoSec('story')">About</a></li>
+    <li><a onclick="gotoSec('contact')">Contact</a></li>
+  </ul>
+  <div class="navRight">
+    <button class="cartTrigger" onclick="openCart()">
+      🛍 Cart <span id="cartBadge">0</span>
+    </button>
+  </div>
+</nav>
+
+<!-- ================================
+     SECTION 1 — HERO
+     ================================ -->
+<section id="hero">
+  <div class="heroEye">Naturally Sweetened · Zero Sugar · Stevia Powered</div>
+  <h1 class="heroH">Sweetness.<br>Without Sugar.</h1>
+  <p class="heroSub">Meet Purawow — a new generation of natural sweetness powered by stevia.</p>
+  <p class="heroTag">No sugar. No guilt. Just pure wow.</p>
+  <button class="heroCta" onclick="gotoSec('products')">Shop Sweetness</button>
+  <div class="scrollCue">
+    <span>Scroll</span>
+    <div class="scrollCueLine"></div>
+  </div>
+</section>
+
+<div class="divLine"></div>
+
+<!-- ================================
+     SECTION 2 — PROBLEM
+     ================================ -->
+<section id="problem" style="padding:120px 0 80px; min-height:auto">
+  <div class="secWrap">
+    <div class="secEye rv">The Problem</div>
+    <h2 class="secH rv d1">Sugar Is <em>Everywhere.</em></h2>
+    <p class="secSub rv d2">And your body pays the price. Most people consume 3× more sugar than their body needs.</p>
+    <div class="problemGrid">
+      <div class="pCard rv d1"><div class="pCardIcon">⚡</div><div class="pCardH">Energy Crashes</div><div class="pCardT">Sugar highs are followed by devastating crashes that drain your energy, focus, and mood throughout the day.</div></div>
+      <div class="pCard rv d2"><div class="pCardIcon">⚖️</div><div class="pCardH">Weight Gain</div><div class="pCardT">Excess sugar gets stored as fat, silently contributing to weight gain even when you're eating "healthy".</div></div>
+      <div class="pCard rv d3"><div class="pCardIcon">📈</div><div class="pCardH">Blood Sugar Spikes</div><div class="pCardT">Repeated glucose spikes stress your metabolism and can lead to insulin resistance and diabetes over time.</div></div>
+      <div class="pCard rv d4"><div class="pCardIcon">🫀</div><div class="pCardH">Long-Term Risks</div><div class="pCardT">Chronic sugar excess is linked to heart disease, inflammation, liver damage, and accelerated ageing.</div></div>
+    </div>
+    <p class="problemClose rv">You don't need less sweetness.<br>You need <em style="color:var(--E);font-style:italic">better</em> sweetness.</p>
+  </div>
+</section>
+
+<div class="divLine"></div>
+
+<!-- ================================
+     SECTION 3 — SOLUTION
+     ================================ -->
+<section id="solution" style="padding:120px 0; min-height:auto">
+  <div class="secWrap">
+    <div class="solGrid">
+      <div class="solVisual">
+        <div class="solGlowOrb"></div>
+        <div class="leafOrbit">🌿</div>
+        <div class="leafOrbit">🍃</div>
+        <div class="leafOrbit">🌱</div>
+        <div class="leafOrbit">✨</div>
+        <div class="solCenter">
+          <span class="big">🌿</span>
+          <small>Stevia Rebaudiana</small>
+        </div>
+      </div>
+      <div>
+        <div class="secEye rv">Nature's Answer</div>
+        <h2 class="secH rv d1" style="font-size:clamp(2.2rem,4.5vw,4.5rem)">Meet Stevia —<br>Nature's Sweet<br><em>Secret.</em></h2>
+        <p class="secSub rv d2" style="margin-bottom:32px">Stevia comes from the leaves of the <em style="color:var(--CR);font-style:normal">stevia plant</em> and is naturally 200–300× sweeter than sugar — with none of the harm.</p>
+        <ul class="benList">
+          <li class="benItem rv d2"><div class="benDot"></div><span>Zero calories — enjoy sweetness completely freely</span></li>
+          <li class="benItem rv d3"><div class="benDot"></div><span>Zero sugar — pure plant-derived sweetness only</span></li>
+          <li class="benItem rv d4"><div class="benDot"></div><span>No blood sugar spikes — certified safe for diabetics</span></li>
+          <li class="benItem rv d5"><div class="benDot"></div><span>100% plant based — no artificial chemicals ever</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divLine"></div>
+
+<!-- ================================
+     SECTION 4 — PRODUCTS
+     ================================ -->
+<section id="products" style="padding:120px 0; min-height:auto">
+  <div class="secWrap">
+    <div class="productsHeader">
+      <div class="secEye rv">Product Range</div>
+      <h2 class="secH rv d1" style="text-align:center">Pure Sweetness,<br><em>Every Form.</em></h2>
+      <p class="secSub rv d2" style="text-align:center;margin:0 auto 0">From sachets to sharbats — natural sweetness crafted for every Indian moment.</p>
+    </div>
+    <div class="prodGrid" id="prodGrid"></div>
+  </div>
+</section>
+
+<div class="divLine"></div>
+
+<!-- ================================
+     SECTION 5 — BENEFITS
+     ================================ -->
+<section id="benefits" style="padding:120px 0; min-height:auto">
+  <div class="secWrap" style="text-align:center">
+    <div class="secEye rv">Why Purawow</div>
+    <h2 class="secH rv d1" style="text-align:center">Built For Your<br><em>Wellbeing.</em></h2>
+    <div class="benGrid">
+      <div class="benSphere rv"><span class="bsIcon">🌱</span><div class="bsTitle">Natural Sweetness</div><div class="bsText">Made from stevia leaves — not chemicals. Pure plant power in every single drop.</div></div>
+      <div class="benSphere rv d1"><span class="bsIcon">💉</span><div class="bsTitle">Diabetic Friendly</div><div class="bsText">Clinically proven not to spike blood sugar. Safe for everyday use by diabetics.</div></div>
+      <div class="benSphere rv d2"><span class="bsIcon">✨</span><div class="bsTitle">Zero Calories</div><div class="bsText">Enjoy all the sweetness your heart desires without adding a single calorie.</div></div>
+      <div class="benSphere rv d3"><span class="bsIcon">🔄</span><div class="bsTitle">Better Habits</div><div class="bsText">Helps reduce sugar consumption gradually — effortlessly, without willpower.</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="divLine"></div>
+
+<!-- ================================
+     SECTION 6 — HOW IT WORKS
+     ================================ -->
+<section id="how" style="padding:120px 0; min-height:auto">
+  <div class="secWrap" style="text-align:center">
+    <div class="secEye rv">The Process</div>
+    <h2 class="secH rv d1" style="text-align:center">One Leaf.<br><em>Endless Sweetness.</em></h2>
+    <div class="timeline">
+      <div class="tlStep rv"><div class="tlCircle">🌿</div><div class="tlNum">Step 01</div><div class="tlTitle">Harvested</div><div class="tlText">Stevia leaves are carefully harvested at peak sweetness from certified farms</div></div>
+      <div class="tlStep rv d1"><div class="tlCircle">🔬</div><div class="tlNum">Step 02</div><div class="tlTitle">Extracted</div><div class="tlText">Natural sweet compounds (steviol glycosides) are gently extracted from the leaves</div></div>
+      <div class="tlStep rv d2"><div class="tlCircle">💧</div><div class="tlNum">Step 03</div><div class="tlTitle">Purified</div><div class="tlText">Purified through a clean, water-based process into concentrated sweetener</div></div>
+      <div class="tlStep rv d3"><div class="tlCircle">☕</div><div class="tlNum">Step 04</div><div class="tlTitle">Delivered</div><div class="tlText">Delivered straight to your cup, glass, recipe, or protein shake</div></div>
+    </div>
+    <p class="howClose rv">A little drop of Purawow replaces <em>spoonfuls</em> of sugar.</p>
+  </div>
+</section>
+
+<div class="divLine"></div>
+
+<!-- ================================
+     SECTION 7 — RECIPES
+     ================================ -->
+<section id="recipes" style="padding:120px 0; min-height:auto">
+  <div class="secWrap" style="text-align:center">
+    <div class="secEye rv">Sweet Life</div>
+    <h2 class="secH rv d1" style="text-align:center">What Will You<br><em>Create Today?</em></h2>
+    <p class="secSub rv d2" style="text-align:center;margin:0 auto 0">Zero sugar. Maximum flavour. Infinite possibility.</p>
+    <div class="recGrid">
+      <div class="recCard rv"><span class="recEmoji">☕</span><div class="recName">Sugar-Free Iced Coffee</div><div class="recTag">Zero Sugar</div></div>
+      <div class="recCard rv d1"><span class="recEmoji">🍋</span><div class="recName">Zero Sugar Lemonade</div><div class="recTag">Refreshing</div></div>
+      <div class="recCard rv d2"><span class="recEmoji">🍫</span><div class="recName">Stevia Brownies</div><div class="recTag">Guilt-Free Baking</div></div>
+      <div class="recCard rv d3"><span class="recEmoji">🥤</span><div class="recName">Healthy Milkshakes</div><div class="recTag">Protein-Packed</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="divLine"></div>
+
+<!-- ================================
+     SECTION 8 — STORY
+     ================================ -->
+<section id="story" style="padding:120px 0; min-height:auto">
+  <div class="secWrap">
+    <div class="storyInner">
+      <div class="secEye rv" style="text-align:center">Our Story</div>
+      <h2 class="storyH rv d1">Why We Built Purawow</h2>
+      <p class="storyPara rv d2">Because <em>sugar shouldn't control your life.</em></p>
+      <div class="storyDivide"></div>
+      <p class="storyPara rv d3">And healthy choices shouldn't feel like <em>punishment</em>. We believe sweetness is one of life's great pleasures — and you shouldn't have to sacrifice it to be healthy.</p>
+      <p class="storyPara rv d4">Purawow exists to make <em>healthy sweetness effortless</em>. Every day. One drop at a time.</p>
+    </div>
+  </div>
+</section>
+
+<div class="divLine"></div>
+
+<!-- ================================
+     FINAL CTA
+     ================================ -->
+<section id="finalCta">
+  <div style="text-align:center; padding:0 24px">
+    <div class="secEye rv" style="text-align:center">Join the Movement</div>
+    <h2 class="ctaH rv d1">Ready To<br>Switch?</h2>
+    <p class="ctaSub rv d2">Sweetness doesn't need sugar.</p>
+    <button class="btnFinal rv d3" onclick="gotoSec('products')">Shop Purawow</button>
+  </div>
+</section>
+
+<!-- ================================
+     FOOTER + CONTACT
+     ================================ -->
+<footer id="contact">
+  <div class="footerGrid">
+    <div>
+      <div class="ftBrand">Purawow</div>
+      <div class="ftSlogan">Sweetness. Reimagined.</div>
+      <p class="ftDesc">Zero sugar. Zero calories. 100% plant-based. Purawow makes healthy sweetness effortless for every Indian home.</p>
+    </div>
+    <div>
+      <div class="ftColH">Products</div>
+      <ul class="ftLinks">
+        <li><a onclick="gotoSec('products')">Stevia Sachets</a></li>
+        <li><a onclick="gotoSec('products')">Sauf Sharbat</a></li>
+        <li><a onclick="gotoSec('products')">Gulab Sharbat</a></li>
+        <li><a onclick="gotoSec('products')">Protein Bars</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="ftColH">Explore</div>
+      <ul class="ftLinks">
+        <li><a onclick="gotoSec('recipes')">Recipes</a></li>
+        <li><a onclick="gotoSec('how')">Our Science</a></li>
+        <li><a onclick="gotoSec('story')">About Us</a></li>
+        <li><a onclick="gotoSec('contact')">Contact</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="ftColH">Get In Touch</div>
+      <div class="contactForm">
+        <div class="fGroup"><label class="fLabel">Name</label><input class="fInput" id="ctName" placeholder="Your name"></div>
+        <div class="fGroup"><label class="fLabel">Email</label><input class="fInput" id="ctEmail" placeholder="you@email.com" type="email"></div>
+        <div class="fGroup"><label class="fLabel">Message</label><textarea class="fTextarea" id="ctMsg" placeholder="How can we help?"></textarea></div>
+        <button class="btnContact" onclick="submitContact()">Send Message →</button>
+        <div class="contactSuccess" id="ctSuccess">✅ Thank you for contacting Purawow. We'll be in touch soon!</div>
+      </div>
+    </div>
+  </div>
+  <div class="footerBottom">
+    <div class="ftCopy">© 2025 Purawow. All rights reserved. Made with 🌿 in India.</div>
+    <div class="socialRow">
+      <a class="socialBtn" href="#" title="Instagram">📸</a>
+      <a class="socialBtn" href="#" title="Amazon">🛒</a>
+      <a class="socialBtn" href="#" title="Flipkart">📦</a>
+    </div>
+  </div>
+</footer>
+
+<!-- ================================
+     JAVASCRIPT — ALL LOGIC
+     ================================ -->
+<script>
+'use strict';
+
+/* ============================
+   PRODUCTS DATA
+   ============================ */
+const PRODUCTS = [
+  {
+    id: 1, emoji: '🫙', badge: 'Best Seller',
+    name: 'Stevia Sachets',
+    tagline: 'Natural sweetness. Anytime, anywhere.',
+    desc: 'Premium stevia sachets crafted for chai, coffee, and everyday use. Each sachet replaces 2 tsp of sugar with zero calories and zero sugar.',
+    benefits: ['Zero Sugar','Zero Calories','Travel Friendly','Perfect for Chai & Coffee'],
+    btnLabel: 'Add Sweetness',
+    price: 199, original: 299, stock: 500
+  },
+  {
+    id: 2, emoji: '🌿', badge: 'New Launch',
+    name: 'Sauf Sharbat',
+    tagline: 'Cool. Refreshing. Naturally sweet.',
+    desc: 'A refreshing fennel-based sharbat sweetened with pure stevia. Zero sugar, full fennel flavour — the perfect Indian summer drink.',
+    benefits: ['Zero Sugar','Digestive Cooling','Summer Perfect','Natural Fennel'],
+    btnLabel: 'Taste Refreshment',
+    price: 249, original: 349, stock: 200
+  },
+  {
+    id: 3, emoji: '🌹', badge: 'Popular',
+    name: 'Gulab Sharbat',
+    tagline: 'The elegance of roses — without sugar.',
+    desc: 'Luxurious rose-flavoured sharbat sweetened with stevia. Perfect for milk, mocktails, and special festive occasions.',
+    benefits: ['Floral Natural Flavor','Zero Sugar','Perfect for Mocktails','Milk & Drinks'],
+    btnLabel: 'Experience Rose',
+    price: 279, original: 399, stock: 150
+  },
+  {
+    id: 4, emoji: '💪', badge: 'Power',
+    name: 'Protein Bars',
+    tagline: 'Energy that fuels you — without sugar.',
+    desc: 'High-protein bars with no added sugar, sweetened naturally with stevia. The perfect post-workout or midday performance snack.',
+    benefits: ['High Protein 20g','No Added Sugar','Post-Workout','Multiple Flavors'],
+    btnLabel: 'Power Up',
+    price: 349, original: 499, stock: 300
+  }
+];
+
+/* ============================
+   CART STATE
+   ============================ */
+let cart = [];
+let selectedPayMode = 'card';
+let toastTimer = null;
+
+function cartCount() { return cart.reduce((s,i) => s + i.qty, 0); }
+function cartTotal() { return cart.reduce((s,i) => s + PRODUCTS.find(p=>p.id===i.id).price * i.qty, 0); }
+
+function addToCart(id) {
+  const ex = cart.find(i => i.id === id);
+  if (ex) { ex.qty++; } else { cart.push({ id, qty: 1 }); }
+  updateBadge();
+  const p = PRODUCTS.find(p => p.id === id);
+  showToast('🛍', 'Added to cart!', p.name + ' — ₹' + p.price);
+}
+
+function updateQty(id, delta) {
+  const item = cart.find(i => i.id === id);
+  if (!item) return;
+  item.qty = Math.max(0, item.qty + delta);
+  if (item.qty === 0) cart = cart.filter(i => i.id !== id);
+  updateBadge();
+  renderCart();
+}
+
+function removeItem(id) {
+  cart = cart.filter(i => i.id !== id);
+  updateBadge();
+  renderCart();
+}
+
+function updateBadge() {
+  const badge = document.getElementById('cartBadge');
+  const n = cartCount();
+  badge.textContent = n;
+  badge.style.background = n > 0 ? 'var(--E)' : 'rgba(100,100,100,0.4)';
+  badge.classList.add('pop');
+  setTimeout(() => badge.classList.remove('pop'), 400);
+}
+
+/* ============================
+   TOAST
+   ============================ */
+function showToast(icon, main, sub) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastIcon').textContent = icon;
+  document.getElementById('toastMain').textContent = main;
+  document.getElementById('toastSub').textContent = sub || '';
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3400);
+}
+
+/* ============================
+   RENDER PRODUCTS
+   ============================ */
+function renderProducts() {
+  const grid = document.getElementById('prodGrid');
+  grid.innerHTML = PRODUCTS.map((p, i) => {
+    const save = Math.round((1 - p.price/p.original)*100);
+    const delays = ['','d1','d2','d3'];
+    return `<div class="prodCard rv ${delays[i]}">
+      <div class="prodBadge">${p.badge}</div>
+      <span class="prodEmoji">${p.emoji}</span>
+      <div class="prodName">${p.name}</div>
+      <div class="prodTagline">${p.tagline}</div>
+      <div class="prodDesc">${p.desc}</div>
+      <div class="prodBens">${p.benefits.map(b => `<span class="prodBen">${b}</span>`).join('')}</div>
+      <div class="prodPriceRow">
+        <div class="prodPrice">₹${p.price}</div>
+        <div class="prodStrike">₹${p.original}</div>
+        <div class="prodSave">${save}% OFF</div>
+      </div>
+      <div class="prodBtns">
+        <button class="btnAdd" onclick="addToCart(${p.id})">${p.btnLabel}</button>
+        <button class="btnDetail" onclick="openDetail(${p.id})">Details</button>
+      </div>
+    </div>`;
+  }).join('');
+  grid.querySelectorAll('.prodCard').forEach(el => revealObserver.observe(el));
+}
+
+/* ============================
+   CART PANEL
+   ============================ */
+function openCart() {
+  renderCart();
+  document.getElementById('cartPanel').classList.add('open');
+  document.getElementById('overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCart() {
+  document.getElementById('cartPanel').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function renderCart() {
+  const body = document.getElementById('cartBody');
+  const footer = document.getElementById('cartFooter');
+
+  if (cart.length === 0) {
+    body.innerHTML = `<div class="emptyState">
+      <span class="emptyIcon">🛍</span>
+      <p>Your cart is empty</p>
+      <button class="btnAdd" style="max-width:200px;margin:0 auto;display:block" onclick="closeCart();gotoSec('products')">Shop Products</button>
+    </div>`;
+    footer.innerHTML = '';
+    return;
+  }
+
+  body.innerHTML = cart.map(item => {
+    const p = PRODUCTS.find(pr => pr.id === item.id);
+    return `<div class="cartItem">
+      <div class="ciIcon">${p.emoji}</div>
+      <div class="ciMeta">
+        <div class="ciName">${p.name}</div>
+        <div class="ciPrice">₹${p.price} each</div>
+        <div class="ciQtyRow">
+          <button class="qBtn" onclick="updateQty(${p.id},-1)">−</button>
+          <span class="qNum">${item.qty}</span>
+          <button class="qBtn" onclick="updateQty(${p.id},1)">+</button>
+          <span class="ciSub">= ₹${p.price * item.qty}</span>
+        </div>
+      </div>
+      <button class="ciRemove" onclick="removeItem(${p.id})">🗑</button>
+    </div>`;
+  }).join('');
+
+  footer.innerHTML = `
+    <div class="cartTotalRow">
+      <div><div class="ctLabel">Cart Total</div></div>
+      <div class="ctAmt">₹${cartTotal()}</div>
+    </div>
+    <div class="cartActions">
+      <button class="btnContinue" onclick="closeCart()">Continue Shopping</button>
+      <button class="btnCheckout" onclick="openCheckout()">Checkout →</button>
+    </div>`;
+}
+
+/* ============================
+   CHECKOUT
+   ============================ */
+function openCheckout() {
+  if (cart.length === 0) { showToast('⚠️','Cart is empty','Add some products first'); return; }
+  closeCart();
+  renderCheckoutSummary();
+  document.getElementById('checkoutPanel').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCheckout() {
+  document.getElementById('checkoutPanel').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function renderCheckoutSummary() {
+  const sumEl = document.getElementById('checkoutSummary');
+  let html = cart.map(item => {
+    const p = PRODUCTS.find(pr => pr.id === item.id);
+    return `<div class="osSummaryItem"><span>${p.emoji} ${p.name} ×${item.qty}</span><span>₹${p.price * item.qty}</span></div>`;
+  }).join('');
+  html += `<div class="osSummaryItem" style="color:var(--T3);font-size:.8rem"><span>Delivery</span><span>Free</span></div>`;
+  html += `<div class="osSummaryItem total"><span>Total Payable</span><span>₹${cartTotal()}</span></div>`;
+  sumEl.innerHTML = html;
+}
+
+function selectPay(mode) {
+  selectedPayMode = mode;
+  ['card','upi','razorpay','cod'].forEach(m => {
+    document.getElementById('pm-'+m)?.classList.toggle('active', m === mode);
+  });
+}
+
+function placeOrder() {
+  const name = document.getElementById('coName')?.value;
+  const email = document.getElementById('coEmail')?.value;
+  const addr = document.getElementById('coAddr')?.value;
+  if (!name || !email || !addr) {
+    showToast('⚠️','Please fill required fields','Name, email and address needed');
+    return;
+  }
+  const orderId = 'PWW-' + Date.now();
+  const orderItems = [...cart];
+  const total = cartTotal();
+
+  /* In production:
+  fetch('/api/checkout', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ name, email, addr, cart, total, payMode: selectedPayMode })
+  }).then(r => r.json()).then(data => showConfirm(data.orderId, name, orderItems, total)); */
+
+  cart = [];
+  updateBadge();
+  closeCheckout();
+  showConfirm(orderId, name, orderItems, total);
+}
+
+function showConfirm(orderId, name, items, total) {
+  const box = document.getElementById('confirmBox');
+  const itemsHtml = items.map(item => {
+    const p = PRODUCTS.find(pr => pr.id === item.id);
+    return `<div class="confSumItem"><span>${p.emoji} ${p.name} ×${item.qty}</span><span>₹${p.price * item.qty}</span></div>`;
+  }).join('');
+
+  box.innerHTML = `
+    <span class="confCheck">🎉</span>
+    <div class="confH">Your sweetness is on the way.</div>
+    <div class="confSub">Thank you, ${name.split(' ')[0]}! Your order has been confirmed and will be shipped within 2-3 business days.</div>
+    <div class="confOrderId">Order ID: ${orderId}</div>
+    <div class="confSummary">${itemsHtml}<div class="confSumItem"><span>Total Paid</span><span>₹${total}</span></div></div>
+    <button class="btnAdd" style="width:100%;padding:16px" onclick="closeConfirm()">Continue Shopping 🌿</button>
+  `;
+  document.getElementById('confirmPanel').classList.add('open');
+}
+
+function closeConfirm() {
+  document.getElementById('confirmPanel').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+/* ============================
+   PRODUCT DETAIL
+   ============================ */
+function openDetail(id) {
+  const p = PRODUCTS.find(pr => pr.id === id);
+  const save = Math.round((1 - p.price/p.original)*100);
+  document.getElementById('detailBox').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:32px">
+      <div class="panelTitle" style="font-size:1.4rem">${p.name}</div>
+      <button class="panelClose" onclick="closeDetail()">✕</button>
+    </div>
+    <div style="text-align:center;margin-bottom:32px">
+      <div style="font-size:5.5rem;filter:drop-shadow(0 0 30px var(--EG));margin-bottom:12px">${p.emoji}</div>
+      <div style="display:inline-block;padding:5px 14px;border-radius:100px;background:rgba(230,192,104,.14);border:1px solid rgba(230,192,104,.3);font-size:.65rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--G)">${p.badge}</div>
+    </div>
+    <div style="font-size:.88rem;color:var(--E);font-style:italic;margin-bottom:14px">${p.tagline}</div>
+    <p style="font-size:.88rem;color:var(--T2);line-height:1.75;margin-bottom:24px">${p.desc}</p>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px">${p.benefits.map(b=>`<span class="prodBen">${b}</span>`).join('')}</div>
+    <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:30px">
+      <div style="font-family:'Playfair Display',serif;font-size:2.4rem;font-weight:700;color:var(--CR)">₹${p.price}</div>
+      <div style="font-size:.95rem;color:var(--T3);text-decoration:line-through">₹${p.original}</div>
+      <div class="prodSave">${save}% OFF</div>
+    </div>
+    <button class="btnAdd" style="width:100%;padding:16px" onclick="addToCart(${p.id});closeDetail()">${p.btnLabel}</button>
+  `;
+  document.getElementById('detailPanel').classList.add('open');
+  document.getElementById('overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeDetail() {
+  document.getElementById('detailPanel').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function closeAll() {
+  closeCart();
+  closeDetail();
+}
+
+/* ============================
+   CONTACT FORM
+   ============================ */
+function submitContact() {
+  const name = document.getElementById('ctName').value;
+  const email = document.getElementById('ctEmail').value;
+  const msg = document.getElementById('ctMsg').value;
+  if (!name || !email || !msg) { showToast('⚠️','Please fill all fields','Name, email and message required'); return; }
+
+  /* In production:
+  fetch('/api/contact', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({name, email, message: msg})
+  }); */
+
+  document.getElementById('ctName').value = '';
+  document.getElementById('ctEmail').value = '';
+  document.getElementById('ctMsg').value = '';
+  const s = document.getElementById('ctSuccess');
+  s.style.display = 'block';
+  showToast('✉️','Message sent!','We\'ll get back to you soon.');
+  setTimeout(() => s.style.display = 'none', 5000);
+}
+
+/* ============================
+   NAVIGATION HELPERS
+   ============================ */
+function gotoSec(id) {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+window.addEventListener('scroll', () => {
+  document.getElementById('navbar').classList.toggle('scrolled', scrollY > 60);
+});
+
+/* ============================
+   SCROLL REVEAL
+   ============================ */
+const revealObserver = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('v');
+      e.target.querySelectorAll('.secEye').forEach(el => el.classList.add('v'));
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
+
+document.querySelectorAll('.rv, .secEye').forEach(el => revealObserver.observe(el));
+
+/* ============================
+   CUSTOM CURSOR
+   ============================ */
+const cursor = document.getElementById('cursor');
+const cursorRing = document.getElementById('cursorRing');
+let mx = 0, my = 0, rx = 0, ry = 0;
+
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cursor.style.left = mx + 'px'; cursor.style.top = my + 'px';
+});
+
+(function animCursor() {
+  rx += (mx - rx) * 0.11; ry += (my - ry) * 0.11;
+  cursorRing.style.left = rx + 'px'; cursorRing.style.top = ry + 'px';
+  requestAnimationFrame(animCursor);
+})();
+
+document.querySelectorAll('button, a, .prodCard, .recCard, .benSphere, .pCard, .socialBtn, .payMode, .navLinks a').forEach(el => {
+  el.addEventListener('mouseenter', () => {
+    cursor.style.width = '20px'; cursor.style.height = '20px';
+    cursor.style.background = el.classList.contains('recCard') ? 'var(--G)' : 'var(--E)';
+    cursorRing.style.width = '56px'; cursorRing.style.height = '56px';
+    cursorRing.style.borderColor = 'rgba(31,175,110,.7)';
+  });
+  el.addEventListener('mouseleave', () => {
+    cursor.style.width = '12px'; cursor.style.height = '12px';
+    cursor.style.background = 'var(--E)';
+    cursorRing.style.width = '44px'; cursorRing.style.height = '44px';
+    cursorRing.style.borderColor = 'rgba(31,175,110,.5)';
+  });
+});
+
+/* ============================
+   THREE.JS — MASTER 3D SCENE
+   ============================ */
+const canvas = document.getElementById('masterCanvas');
+const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 1000);
+camera.position.set(0, 0, 6);
+
+// Lighting
+const ambient = new THREE.AmbientLight(0x1FAF6E, 0.45);
+scene.add(ambient);
+const pL1 = new THREE.PointLight(0x1FAF6E, 5, 30);
+pL1.position.set(6, 6, 5);
+scene.add(pL1);
+const pL2 = new THREE.PointLight(0xE6C068, 3, 22);
+pL2.position.set(-6, -4, 4);
+scene.add(pL2);
+const pL3 = new THREE.PointLight(0xffffff, 2, 18);
+pL3.position.set(0, 10, 3);
+scene.add(pL3);
+const hemi = new THREE.HemisphereLight(0x1FAF6E, 0x000000, 0.25);
+scene.add(hemi);
+
+// ---- SUGAR CUBE ----
+const cubeGroup = new THREE.Group();
+scene.add(cubeGroup);
+const cubeGeo = new THREE.BoxGeometry(1.9, 1.9, 1.9, 6, 6, 6);
+const cubeMat = new THREE.MeshPhysicalMaterial({
+  color: 0xffffff, roughness: 0.07, metalness: 0.0,
+  transmission: 0.65, thickness: 0.5,
+  transparent: true, opacity: 0.82,
+  ior: 1.5, reflectivity: 0.3
+});
+const cube = new THREE.Mesh(cubeGeo, cubeMat);
+cubeGroup.add(cube);
+
+// Cube edge glow
+const edgeGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(1.91, 1.91, 1.91));
+const edgeMat = new THREE.LineBasicMaterial({ color: 0x1FAF6E, transparent: true, opacity: 0.35 });
+const edges = new THREE.LineSegments(edgeGeo, edgeMat);
+cubeGroup.add(edges);
+
+// ---- CRYSTAL SHARDS ----
+const shards = [];
+for (let i = 0; i < 28; i++) {
+  const sg = i % 3 === 0
+    ? new THREE.OctahedronGeometry(Math.random() * 0.2 + 0.05)
+    : new THREE.TetrahedronGeometry(Math.random() * 0.18 + 0.04);
+  const sm = new THREE.MeshPhysicalMaterial({
+    color: i % 4 === 0 ? 0xE6C068 : 0xffffff,
+    roughness: 0.05, metalness: i % 4 === 0 ? 0.3 : 0.0,
+    transparent: true, opacity: 0.7, transmission: 0.3
+  });
+  const s = new THREE.Mesh(sg, sm);
+  s.position.set((Math.random() - 0.5) * 10, (Math.random() - 0.5) * 9, (Math.random() - 0.5) * 6 - 2);
+  s.userData = {
+    ox: s.position.x, oy: s.position.y, oz: s.position.z,
+    sp: Math.random() * 0.016 + 0.004, ph: Math.random() * Math.PI * 2
+  };
+  shards.push(s);
+  scene.add(s);
+}
+
+// ---- PARTICLES (emerald + gold + cream) ----
+const pCount = 1500;
+const pGeo = new THREE.BufferGeometry();
+const pPos = new Float32Array(pCount * 3);
+const pCol = new Float32Array(pCount * 3);
+const pSize = new Float32Array(pCount);
+
+for (let i = 0; i < pCount; i++) {
+  pPos[i*3] = (Math.random() - 0.5) * 30;
+  pPos[i*3+1] = (Math.random() - 0.5) * 26;
+  pPos[i*3+2] = (Math.random() - 0.5) * 22 - 4;
+  const t = Math.random();
+  if (t < 0.5) { pCol[i*3]=0.12; pCol[i*3+1]=0.69; pCol[i*3+2]=0.43; } // emerald
+  else if (t < 0.75) { pCol[i*3]=0.90; pCol[i*3+1]=0.75; pCol[i*3+2]=0.26; } // gold
+  else { pCol[i*3]=0.97; pCol[i*3+1]=0.97; pCol[i*3+2]=0.95; } // cream
+  pSize[i] = Math.random() * 0.05 + 0.02;
+}
+
+pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+pGeo.setAttribute('color', new THREE.BufferAttribute(pCol, 3));
+pGeo.setAttribute('size', new THREE.BufferAttribute(pSize, 1));
+
+const pMat = new THREE.PointsMaterial({
+  size: 0.06, vertexColors: true, transparent: true,
+  opacity: 0.55, sizeAttenuation: true
+});
+const particles = new THREE.Points(pGeo, pMat);
+scene.add(particles);
+
+// ---- RINGS ----
+function makeRing(r, tube, col, op, rx=0, ry=0) {
+  const m = new THREE.Mesh(
+    new THREE.TorusGeometry(r, tube, 8, 100),
+    new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: op })
+  );
+  m.rotation.x = rx; m.rotation.y = ry;
+  scene.add(m); return m;
+}
+const ring1 = makeRing(3.2, 0.007, 0x1FAF6E, 0.2);
+const ring2 = makeRing(4, 0.005, 0xE6C068, 0.14, Math.PI/4, 0);
+const ring3 = makeRing(2.5, 0.006, 0xffffff, 0.08, 0, Math.PI/3);
+const ring4 = makeRing(5, 0.004, 0x1FAF6E, 0.06, Math.PI/6, Math.PI/5);
+
+// ---- CURSOR-REACTIVE PARTICLES ----
+const cursorParticleCount = 60;
+const cpGeo = new THREE.BufferGeometry();
+const cpPos = new Float32Array(cursorParticleCount * 3);
+for (let i = 0; i < cursorParticleCount; i++) {
+  cpPos[i*3] = (Math.random() - 0.5) * 0.2;
+  cpPos[i*3+1] = (Math.random() - 0.5) * 0.2;
+  cpPos[i*3+2] = (Math.random() - 0.5) * 0.2;
+}
+cpGeo.setAttribute('position', new THREE.BufferAttribute(cpPos, 3));
+const cpMat = new THREE.PointsMaterial({ size: 0.08, color: 0x1FAF6E, transparent: true, opacity: 0.8 });
+const cursorParticles = new THREE.Points(cpGeo, cpMat);
+scene.add(cursorParticles);
+
+// ---- MOUSE PARALLAX ----
+let tRX = 0, tRY = 0, cRX = 0, cRY = 0;
+let normMouseX = 0, normMouseY = 0;
+
+document.addEventListener('mousemove', e => {
+  normMouseX = (e.clientX / innerWidth) * 2 - 1;
+  normMouseY = -((e.clientY / innerHeight) * 2 - 1);
+  tRX = normMouseY * 0.45;
+  tRY = normMouseX * 0.45;
+  // Update cursor particles position
+  const cx = (normMouseX * 5);
+  const cy = (normMouseY * 5);
+  const cp = cpGeo.attributes.position.array;
+  for (let i = 0; i < cursorParticleCount; i++) {
+    cp[i*3] = cx + (Math.random() - 0.5) * 2;
+    cp[i*3+1] = cy + (Math.random() - 0.5) * 2;
+    cp[i*3+2] = (Math.random() - 0.5) * 0.5;
+  }
+  cpGeo.attributes.position.needsUpdate = true;
+});
+
+const clock = new THREE.Clock();
+let scrollProgress = 0;
+
+window.addEventListener('scroll', () => {
+  scrollProgress = Math.min(window.scrollY / (innerHeight * 1.5), 1);
+});
+
+/* ---- ANIMATION LOOP ---- */
+function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+  const sp = scrollProgress;
+
+  // Mouse lerp
+  cRX += (tRX - cRX) * 0.045;
+  cRY += (tRY - cRY) * 0.045;
+
+  // Sugar cube
+  cube.visible = sp < 0.7;
+  edges.visible = sp < 0.65;
+  if (cube.visible) {
+    cubeGroup.rotation.y = t * 0.28 + cRY;
+    cubeGroup.rotation.x = t * 0.14 + cRX;
+    if (sp < 0.3) {
+      cube.scale.setScalar(1);
+      cubeMat.opacity = 0.82 - sp * 1.5;
+    } else {
+      const dissolve = (sp - 0.3) / 0.4;
+      cube.scale.setScalar(Math.max(0, 1 - dissolve * 1.3));
+      cubeMat.opacity = Math.max(0, 0.35 - dissolve * 0.9);
+    }
+    cubeGroup.position.y = -sp * 2.5;
+  }
+
+  // Shards — fly outward on scroll
+  shards.forEach(s => {
+    const u = s.userData;
+    s.rotation.x = t * u.sp * 5 + u.ph;
+    s.rotation.y = t * u.sp * 3;
+    if (sp > 0.18) {
+      const fly = ((sp - 0.18) / 0.55) * 6;
+      s.position.set(
+        u.ox * (1 + fly * 0.9) + Math.sin(t * u.sp * 2) * 0.3,
+        u.oy * (1 + fly * 0.7) + Math.cos(t * u.sp * 2) * 0.3,
+        u.oz * (1 - fly * 0.25)
+      );
+      s.material.opacity = Math.max(0, 0.7 - fly * 0.14);
+    }
+  });
+
+  // Particles drift
+  const pp = pGeo.attributes.position.array;
+  for (let i = 0; i < pCount; i++) {
+    pp[i*3+1] += 0.0018 + Math.sin(t * 0.2 + i) * 0.0006;
+    if (pp[i*3+1] > 13) pp[i*3+1] = -13;
+    pp[i*3] += Math.sin(t * 0.25 + i * 0.1) * 0.0006;
+  }
+  pGeo.attributes.position.needsUpdate = true;
+  particles.rotation.y = t * 0.012 + cRY * 0.35;
+  particles.rotation.x = cRX * 0.2;
+
+  // Rings
+  ring1.rotation.z = t * 0.09;
+  ring1.rotation.x = Math.PI * 0.12 + cRX * 0.4;
+  ring2.rotation.z = t * -0.07;
+  ring2.rotation.y = t * 0.05 + cRY * 0.25;
+  ring3.rotation.y = t * 0.11;
+  ring3.rotation.z = cRY * 0.3;
+  ring4.rotation.x = t * 0.03;
+  ring4.rotation.z = t * 0.06;
+
+  // Camera parallax
+  camera.position.x += (cRY * 1.8 - camera.position.x) * 0.06;
+  camera.position.y += (-cRX * 1.8 - camera.position.y) * 0.06;
+  camera.lookAt(0, 0, 0);
+
+  // Animated lights
+  pL1.position.set(Math.sin(t * 0.4) * 7, Math.cos(t * 0.3) * 5, 5);
+  pL2.position.set(Math.cos(t * 0.35) * 6, Math.sin(t * 0.5) * 4, 3);
+  pL3.intensity = 1.5 + Math.sin(t * 0.6) * 0.5;
+
+  renderer.render(scene, camera);
+}
+
+animate();
+
+window.addEventListener('resize', () => {
+  renderer.setSize(innerWidth, innerHeight);
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+});
+
+/* ============================
+   RIPPLE BUTTON EFFECT
+   ============================ */
+document.querySelectorAll('.heroCta, .btnFinal, .btnAdd, .btnPay').forEach(btn => {
+  btn.addEventListener('click', function(e) {
+    const span = document.createElement('span');
+    const rect = this.getBoundingClientRect();
+    span.style.cssText = `
+      position:absolute; border-radius:50%; pointer-events:none;
+      background:rgba(255,255,255,0.22);
+      width:8px; height:8px;
+      left:${e.clientX - rect.left - 4}px;
+      top:${e.clientY - rect.top - 4}px;
+      transition: width .8s ease-out, height .8s ease-out, left .8s ease-out, top .8s ease-out, opacity .8s ease-out;
+    `;
+    this.appendChild(span);
+    requestAnimationFrame(() => {
+      span.style.width = '400px'; span.style.height = '400px';
+      span.style.left = 'calc(50% - 200px)'; span.style.top = 'calc(50% - 200px)';
+      span.style.opacity = '0';
+    });
+    setTimeout(() => span.remove(), 800);
+  });
+});
+
+/* Init */
+renderProducts();
+updateBadge();
+</script>
+</body>
+</html>
